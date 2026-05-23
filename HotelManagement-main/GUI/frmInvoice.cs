@@ -9,38 +9,18 @@ using System.Windows.Forms;
 
 namespace GUI
 {
-    public class frmInvoice : XtraForm
+    public partial class frmInvoice : XtraForm
     {
         private readonly InvoiceBUS _invoiceBus;
         private InvoiceInfoDTO _currentInfo;
         private PrintDocument _printDoc;
         private PrintPreviewDialog _preview;
 
-        private ComboBox cboBooking;
-        private Button btnCalculate;
-        private Button btnSave;
-        private Button btnPrint;
-
-        private TextBox txtCustomerName;
-        private TextBox txtCustomerCCCD;
-        private TextBox txtCustomerPhone;
-
-        private TextBox txtRooms;
-        private TextBox txtCheckIn;
-        private TextBox txtCheckOut;
-        private TextBox txtDays;
-        private TextBox txtRoomPricePerDay;
-        private TextBox txtRoomTotal;
-
-        private TextBox txtServiceTotal;
-        private TextBox txtTotal;
-
-        private DataGridView dgvServices;
-
         public frmInvoice()
         {
             _invoiceBus = new InvoiceBUS();
             InitializeComponent();
+            SetupPrinting();
             LoadBookings();
         }
 
@@ -48,6 +28,8 @@ namespace GUI
         {
             if (disposing)
             {
+                if (components != null)
+                    components.Dispose();
                 if (_printDoc != null)
                 {
                     _printDoc.Dispose();
@@ -62,184 +44,14 @@ namespace GUI
             base.Dispose(disposing);
         }
 
-        private void InitializeComponent()
+        private void SetupPrinting()
         {
-            Text = "Hóa đơn";
-            Width = 1000;
-            Height = 720;
-            StartPosition = FormStartPosition.CenterParent;
-
-            var root = new TableLayoutPanel();
-            root.Dock = DockStyle.Fill;
-            root.RowCount = 4;
-            root.ColumnCount = 1;
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 180));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
-            Controls.Add(root);
-
-            // Top panel
-            var topPanel = new FlowLayoutPanel();
-            topPanel.Dock = DockStyle.Fill;
-            topPanel.FlowDirection = FlowDirection.LeftToRight;
-            topPanel.WrapContents = false;
-            topPanel.Padding = new Padding(10, 10, 10, 10);
-            topPanel.Controls.Add(new Label { Text = "Booking:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft });
-
-            cboBooking = new ComboBox();
-            cboBooking.Width = 280;
-            cboBooking.DropDownStyle = ComboBoxStyle.DropDownList;
-            topPanel.Controls.Add(cboBooking);
-
-            btnCalculate = new Button();
-            btnCalculate.Text = "Calculate";
-            btnCalculate.Width = 120;
-            btnCalculate.Click += btnCalculate_Click;
-            topPanel.Controls.Add(btnCalculate);
-
-            root.Controls.Add(topPanel, 0, 0);
-
-            // Info panel
-            var infoPanel = new TableLayoutPanel();
-            infoPanel.Dock = DockStyle.Fill;
-            infoPanel.ColumnCount = 2;
-            infoPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            infoPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            infoPanel.RowCount = 1;
-
-            var grpCustomer = new GroupBox();
-            grpCustomer.Text = "Customer";
-            grpCustomer.Dock = DockStyle.Fill;
-            grpCustomer.Padding = new Padding(10);
-            grpCustomer.Controls.Add(BuildCustomerPanel());
-
-            var grpRoom = new GroupBox();
-            grpRoom.Text = "Room";
-            grpRoom.Dock = DockStyle.Fill;
-            grpRoom.Padding = new Padding(10);
-            grpRoom.Controls.Add(BuildRoomPanel());
-
-            infoPanel.Controls.Add(grpCustomer, 0, 0);
-            infoPanel.Controls.Add(grpRoom, 1, 0);
-            root.Controls.Add(infoPanel, 0, 1);
-
-            // Services grid
-            dgvServices = new DataGridView();
-            dgvServices.Dock = DockStyle.Fill;
-            dgvServices.AutoGenerateColumns = false;
-            dgvServices.ReadOnly = true;
-            dgvServices.AllowUserToAddRows = false;
-            dgvServices.AllowUserToDeleteRows = false;
-
-            dgvServices.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "ServiceName", HeaderText = "Service", Width = 240 });
-            dgvServices.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Quantity", HeaderText = "Qty", Width = 80 });
-            dgvServices.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "UnitPrice", HeaderText = "Unit Price", Width = 120 });
-            dgvServices.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "SubTotal", HeaderText = "Sub Total", Width = 120 });
-
-            root.Controls.Add(dgvServices, 0, 2);
-
-            // Bottom panel
-            var bottomPanel = new FlowLayoutPanel();
-            bottomPanel.Dock = DockStyle.Fill;
-            bottomPanel.FlowDirection = FlowDirection.LeftToRight;
-            bottomPanel.WrapContents = false;
-            bottomPanel.Padding = new Padding(10, 10, 10, 10);
-
-            bottomPanel.Controls.Add(new Label { Text = "Service Total:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft });
-            txtServiceTotal = CreateReadOnlyBox(120);
-            bottomPanel.Controls.Add(txtServiceTotal);
-
-            bottomPanel.Controls.Add(new Label { Text = "Total:", AutoSize = true, Margin = new Padding(20, 0, 0, 0) });
-            txtTotal = CreateReadOnlyBox(120);
-            bottomPanel.Controls.Add(txtTotal);
-
-            btnSave = new Button();
-            btnSave.Text = "Save Invoice";
-            btnSave.Width = 140;
-            btnSave.Margin = new Padding(30, 0, 0, 0);
-            btnSave.Click += btnSave_Click;
-            bottomPanel.Controls.Add(btnSave);
-
-            btnPrint = new Button();
-            btnPrint.Text = "Print Invoice";
-            btnPrint.Width = 140;
-            btnPrint.Click += btnPrint_Click;
-            bottomPanel.Controls.Add(btnPrint);
-
-            root.Controls.Add(bottomPanel, 0, 3);
-
             _printDoc = new PrintDocument();
             _printDoc.PrintPage += PrintDoc_PrintPage;
             _preview = new PrintPreviewDialog();
             _preview.Document = _printDoc;
             _preview.Width = 1000;
             _preview.Height = 800;
-        }
-
-        private Control BuildCustomerPanel()
-        {
-            var panel = new TableLayoutPanel();
-            panel.Dock = DockStyle.Fill;
-            panel.ColumnCount = 2;
-            panel.RowCount = 3;
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-            panel.Controls.Add(new Label { Text = "Name", AutoSize = true }, 0, 0);
-            txtCustomerName = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtCustomerName, 1, 0);
-
-            panel.Controls.Add(new Label { Text = "CCCD", AutoSize = true }, 0, 1);
-            txtCustomerCCCD = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtCustomerCCCD, 1, 1);
-
-            panel.Controls.Add(new Label { Text = "Phone", AutoSize = true }, 0, 2);
-            txtCustomerPhone = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtCustomerPhone, 1, 2);
-
-            return panel;
-        }
-
-        private Control BuildRoomPanel()
-        {
-            var panel = new TableLayoutPanel();
-            panel.Dock = DockStyle.Fill;
-            panel.ColumnCount = 2;
-            panel.RowCount = 6;
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-            panel.Controls.Add(new Label { Text = "Rooms", AutoSize = true }, 0, 0);
-            txtRooms = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtRooms, 1, 0);
-
-            panel.Controls.Add(new Label { Text = "Check-in", AutoSize = true }, 0, 1);
-            txtCheckIn = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtCheckIn, 1, 1);
-
-            panel.Controls.Add(new Label { Text = "Check-out", AutoSize = true }, 0, 2);
-            txtCheckOut = CreateReadOnlyBox(220);
-            panel.Controls.Add(txtCheckOut, 1, 2);
-
-            panel.Controls.Add(new Label { Text = "Days", AutoSize = true }, 0, 3);
-            txtDays = CreateReadOnlyBox(120);
-            panel.Controls.Add(txtDays, 1, 3);
-
-            panel.Controls.Add(new Label { Text = "Room/Day", AutoSize = true }, 0, 4);
-            txtRoomPricePerDay = CreateReadOnlyBox(120);
-            panel.Controls.Add(txtRoomPricePerDay, 1, 4);
-
-            panel.Controls.Add(new Label { Text = "Room Total", AutoSize = true }, 0, 5);
-            txtRoomTotal = CreateReadOnlyBox(120);
-            panel.Controls.Add(txtRoomTotal, 1, 5);
-
-            return panel;
-        }
-
-        private static TextBox CreateReadOnlyBox(int width)
-        {
-            return new TextBox { ReadOnly = true, Width = width };
         }
 
         private void LoadBookings()
