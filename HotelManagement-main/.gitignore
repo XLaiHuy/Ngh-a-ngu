@@ -1,0 +1,54 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+*/bin/
+*/obj/
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# EF designer
+*.edmx
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Visual Studio Code
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Publish
+publish/
+
+# LocalDB
+*.mdf
+*.ldf
+
+# User secrets
+secrets.json
+
+# Certificates
+*.pfx
+
+# Ignore generated obj/ from tools
+**/obj/**
